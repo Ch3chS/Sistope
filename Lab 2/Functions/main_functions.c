@@ -1,5 +1,9 @@
 #include "../headers.h"
 
+
+//Entrada: Nombre de un archivo como cadena de caracteres
+//Salida: No posee
+//Abre el archivo sin escribir nada en el, y avisa en caso de un error al abrir el mismo
 void file_open(char *file_name){
     fp = fopen(file_name,"r");      //Se intenta abrir el archivo 
 
@@ -9,6 +13,22 @@ void file_open(char *file_name){
     }
 }
 
+
+//Entrada: Entero con el número de discos
+//Salida: No posee
+//Inicializa los diferentes semaforos a usar a lo largo del programa para asi evitar problemas de concurrencia
+void semaphores_init(int n){
+    pthread_mutex_init(&Leer, NULL);                 //Inicializamos el semaforo de lectura del archivo
+
+    for(int i = 0; i < n; i++){                      //Para cada disco
+        pthread_mutex_init(&Edit_disk[i], NULL);     //Inicializamos su respectivo semaforo propio
+    }
+}
+
+
+//Entrada: Un entero con el número de hebras y un arreglo de enteros con los argumentos a usar por estas
+//Salida: No posee
+//Crea las hebras pasandoles el argumento solicitado (La id de las hebras queda guardada en un arreglo para la siguiente función)
 void threads_creation(int h, int args[3]){
     
     for(int i = 0; i < h;i++){     //Con el número de hebras ingresado por consola realizamos un ciclo
@@ -16,6 +36,10 @@ void threads_creation(int h, int args[3]){
     }
 }
 
+
+//Entrada: El número de hebras (También hace uso del arreglo rellenado en la función previa)
+//Salida: No posee
+//Espera a que finalicen todas las hebras una por una
 void wait_threads(int h){
     for(int i = 0; i < h; i++){
         void *retval;
@@ -24,13 +48,23 @@ void wait_threads(int h){
     //Si salimos del for es porque ya todas terminaron por lo que dejamos de esperar.
 }
 
+
+//Entrada: Entero con el número de discos
+//Salida: No posee
+//Divide lo acumulado en la media real e imaginaria de cada disco (A menos que estos no tengan ninguna visibilidad dentro)
 void average_division(int n){
-    for(int i = 0; i < n;i++){                                                        //Para cada disco
-        discos[i].media_r = (discos[i].media_r / discos[i].visibilidades_totales);    //suma de visibilidades reales / número de visibilidades 
-        discos[i].media_i = (discos[i].media_i / discos[i].visibilidades_totales);    //suma de visibilidades imaginarias / número de visibilidades 
+    for(int i = 0; i < n;i++){                                                            //Para cada disco
+        if(discos[i].visibilidades_totales != 0){                                         //Esto es por si no hay ninguna visibilidad en un disco
+            discos[i].media_r = (discos[i].media_r / discos[i].visibilidades_totales);    //suma de visibilidades reales / número de visibilidades 
+            discos[i].media_i = (discos[i].media_i / discos[i].visibilidades_totales);    //suma de visibilidades imaginarias / número de visibilidades 
+        }
     }
 }
 
+
+//Entrada: El nombre de un archivo a modo de cadena de caracteres, un entero con el número de discos y una flag que nos dice si debemos imprimir o no por pantalla
+//Salida: No posee
+//Escribe los datos obtenidos en un archivo con un nombre dado, y, en caso de pedirse por consola con "-b" también se debe imprimir lo obtenido en la misma
 void write_file(char *file_name, int n, int b){
     FILE *fs;
     fs = fopen(file_name,"w");

@@ -3,7 +3,7 @@
 #include "unistd.h"
 #include "pthread.h"
 #include "math.h"
-#include "headers.h"
+#include "headers.h"   //En esta libreria están las cabeceras de las funciones y estructuras usadas además de las variables globales
 
 
 // ----------------------------------------------------- MAIN (FASE 0) -----------------------------------------------------------------------------------------
@@ -113,20 +113,25 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
+
+
+
     //--------------------------  Una vez verificados y guardados los valores ingresados por consola procedemos: ----------------------------------------------------
 
-    file_open(iname);       
+    //Observación: A excepción de la función threads_creation todas las funciones llamadas a continuación se encuentran en el archivo main_functions.c de la carpeta Functions
+
+    file_open(iname);                                //Primero abrimos el archivo sin escribir nada en el
     
-    int args[3] = {nname, dname, cname};
-    threads_creation(hname, args);       //Se crean las hebras
+    semaphores_init(nname);                          //Inicializamos los semaforos a usar
 
+    int args[3] = {nname, dname, cname};             //Estos serán los argumentos usados por las hebras
+    threads_creation(hname, args);                   //Se crean las hebras (Última función del archivo thread_functions.c de la carpeta Functions)
 
+    wait_threads(hname);                             //Esperamos a que las hebras finalicen su trabajo
 
-    wait_threads(hname);          //Esperamos a que las hebras finalicen su trabajo
+    average_division(nname);                         //Se dividen los valores que se tengan que dividir
 
-    //average_division(nname);
+    write_file(oname, nname, bflag);                 //Se escribe el archivo de resultado y se imprime por pantalla en caso de ser solicitado con la flag -b
 
-    //write_file(oname, nname, bflag);
-
-    return 0;
+    return 0;                                        //Finaliza el programa
 }

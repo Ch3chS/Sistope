@@ -14,12 +14,26 @@ void file_open(char *file_name){
 }
 
 
+//Entrada: Número de anillos
+//Salida: No posee
+//Inicializa los discos con sus valores en 0
+void inicializar_anillos(int n){
+    for(int i = 0; i < n; i++){
+        discos[i].media_r = 0;
+        discos[i].media_i = 0;
+        discos[i].potencia = 0;
+        discos[i].ruido = 0;
+        discos[i].visibilidades_totales = 0;
+    }
+}
+
+
 //Entrada: Entero con el número de discos
 //Salida: No posee
 //Inicializa los diferentes semaforos a usar a lo largo del programa para asi evitar problemas de concurrencia
 void semaphores_init(int n){
     pthread_mutex_init(&Leer, NULL);                 //Inicializamos el semaforo de lectura del archivo
-
+    pthread_mutex_init(&Arreglo_edit_disk, NULL);  
     for(int i = 0; i < n; i++){                      //Para cada disco
         pthread_mutex_init(&Edit_disk[i], NULL);     //Inicializamos su respectivo semaforo propio
     }

@@ -121,6 +121,8 @@ int main(int argc, char *argv[]){
     //Observación: A excepción de la función threads_creation todas las funciones llamadas a continuación se encuentran en el archivo main_functions.c de la carpeta Functions
 
     file_open(iname);                                //Primero abrimos el archivo sin escribir nada en el
+
+    inicializar_anillos(nname);                          //Inicializamos el arreglo con los anillos y sus valores en 0
     
     semaphores_init(nname);                          //Inicializamos los semaforos a usar
 

@@ -28,8 +28,6 @@ struct nodo *CS_readChunk(int chunk){
 //Actualiza los valores dentro del anillo con los valores obtenidos de la linea correspondiente a este
 void CS_actualizarAnillo(int anillo, double real, double imaginario, double ruido){
 
-    printf("anillo %d\n", anillo);
-
     double potencia = sqrt(pow(real, 2) + pow(imaginario, 2));
 
     discos[anillo].media_r += real;
@@ -41,6 +39,8 @@ void CS_actualizarAnillo(int anillo, double real, double imaginario, double ruid
     discos[anillo].ruido += ruido;
 
     discos[anillo].visibilidades_totales += 1;  //Ya que agregamos una visibilidad hay que actualizar el contador para la división final
+
+    return;
 }
 
 
@@ -48,24 +48,28 @@ void CS_actualizarAnillo(int anillo, double real, double imaginario, double ruid
 
 //----------------------------------------------  Funciones  -----------------------------------------------------------
 
-
 //Entrada: Arreglo de flotantes dobles con los datos de la linea, el número de discos y el ancho de cada uno 
-//Salida: Un entero que indica si termino correctamente
+//Salida: No posee
 //A partir de los datos obtenidos se ve en que disco se encuentra la visibilidad, posteriormente usan semaforos y se entra a dicho disco de forma segura
-int seleccionar_anillo(double datos[5], int n_discos, int radio){
+void seleccionar_anillo(double datos[5], int n_discos, int radio){
     
     int distancia = sqrt(pow(datos[0], 2) + pow(datos[1], 2));       //Modulo (raiz de la suma de los cuadrados de u y v)
     int i = 1;  //La i será un iterador para ubicarnos entre los radios de los distintos discos y asi saber en que disco estamos ubicados
 
     while(i < n_discos){ 
         if((((i-1)*radio) <= distancia) && (distancia < (i*radio))){  //Se verifica la pertenencia a un disco
-            //Numero de disco dado por i
-            
-            pthread_mutex_lock(&Edit_disk[i]);
-            CS_actualizarAnillo(i, datos[2], datos[3], datos[4]);        //---------------ENTRADA AL DISCO i-----------//
-            pthread_mutex_unlock(&Edit_disk[i]);
+            //Numero de disco dado por i (i-1 en los arreglos)
+            pthread_mutex_lock(&Arreglo_edit_disk);
+            pthread_mutex_lock(&Edit_disk[i-1]);        
+            pthread_mutex_unlock(&Arreglo_edit_disk);
 
-            return 0; //Si ya se encontro el disco y se mandaron los datos retornamos para continuar
+            CS_actualizarAnillo(i-1, datos[2], datos[3], datos[4]);        //---------------ENTRADA AL DISCO i-----------//
+            
+            pthread_mutex_lock(&Arreglo_edit_disk);
+            pthread_mutex_unlock(&Edit_disk[i-1]);
+            pthread_mutex_unlock(&Arreglo_edit_disk);
+
+            return; //Si ya se encontro el disco y se mandaron los datos retornamos para continuar
         }
         i++;   // Si no entra en el rango de este disco pasamos al siguiente
     }
@@ -75,9 +79,8 @@ int seleccionar_anillo(double datos[5], int n_discos, int radio){
             pthread_mutex_lock(&Edit_disk[n_discos]);
             CS_actualizarAnillo(n_discos, datos[2], datos[3], datos[4]); //---------------ENTRADA AL DISCO n_discos-----------//
             pthread_mutex_unlock(&Edit_disk[n_discos]);
-
-
-    return 0;
+            
+    return;
 }
 
 
@@ -110,7 +113,6 @@ void procesar_linea(char *linea, int n , int d){
         }
         i++;
     }
-    
     seleccionar_anillo(valores, n, d);
     return;
 }
@@ -122,11 +124,14 @@ void procesar_linea(char *linea, int n , int d){
 void procesar_chunk(struct nodo *L, int n, int d){
     while(L != NULL){               //Recorremos el chunk con las respectivas lineas
         if(leer_nodo(L) != NULL){
-            procesar_linea(leer_nodo(L), d, n);    //Procesamos la linea
-            L = L->sig;
-            //L = borrar_inicio(L);                //Y la borramos de la estructura para pasar a la siguiente
-        }else return;
+            procesar_linea(leer_nodo(L), n, d);    //Procesamos la linea
+
+            L = borrar_inicio(L);                //Y la borramos de la estructura para pasar a la siguiente
+        }else{
+            L = L->sig;  //Si por alguna razon extraña se agrego un nodo sin contenido pasamos al siguiente
+        }
     }
+    return;
 }
 
 
@@ -150,13 +155,15 @@ void thread(int args[3]){ //int N_discos, ancho, chunk
             return; 
         }
 
-       
         //Si llegamos a este punto es porque hay datos por procesar
         procesar_chunk(L, n , d);
 
+        printf("Terminado\n");
 
         L = 0;  //Reiniciamos L
     }
+
+    return;
 }
 
 
